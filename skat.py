@@ -72,6 +72,13 @@ the full 32-card set.  Do this comparison twice to avoid errors.
 
 """
 
+#
+# Plain text treatment.
+#
+# NOTE Using the structured response_format here, will drastically increase
+# the error rate.  (Because the model doesn't produce the intermediate text
+# and hence can't use ... "self-attention"?)
+#
 completion = client.beta.chat.completions.parse(
     model=model,
     temperature=temp,
@@ -81,15 +88,44 @@ completion = client.beta.chat.completions.parse(
     ],
     # response_format=SkatContent,
 )
+# print(completion)
 
 answer = completion.choices[0].message.content
-print(answer)
+#print(answer)
+#structured = completion.choices[0].message.parsed
+#if structured:
+#    print(structured)
 
-structured = completion.choices[0].message.parsed
-if structured:
-    print("Structured:")
-    print(structured)
-print("Expected: 9♥️, 7♠️")
+#
+# Summary with structured output.
+#
+
+summary_prompt = """
+Summarize the finding of the previous answer using structured output.
+Order card values.
+"""
+
+completion2 = client.beta.chat.completions.parse(
+    model=model,
+    temperature=temp,
+    messages=[
+        {"role": "system", "content": summary_prompt},
+        {"role": "user", "content": answer},
+    ],
+    response_format=SkatContent,
+)
+
+structured = completion2.choices[0].message.parsed
+
+#
+# NOTE Using the string representation for now.
+#
+# print(type(structured))
+# print(dir(structured))
+
+print(structured)
+print("Expected: ['7♠️', '9♥️']")
+
 
 # while True:
 #    myinput = input("> ")
