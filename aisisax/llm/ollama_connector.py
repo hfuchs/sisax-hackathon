@@ -11,8 +11,10 @@ load_dotenv()
 # Host und Port aus der .env-Datei laden
 ollama_host = os.getenv("OLLAMA_HOST")  # Standardwert: localhost
 ollama_port = os.getenv("OLLAMA_PORT", "11434")  # Standardwert: 11434
+base_url = f"{ollama_host}:{ollama_port}"
 
-def generate_answer(query, messages=None, model="llama3.2"):
+
+def generate_answer(query, messages=None, model="llama3.2", temperature=0.9):
     """
     communicates with Ollama chatbot inference server.
 
@@ -27,16 +29,15 @@ def generate_answer(query, messages=None, model="llama3.2"):
         messages = []
 
     # Define the system prompt
-    system_prompt = """You are a helpful assistant that answers questions based on the provided context. 
+    system_prompt = """You are a helpful assistant that answers questions based on the provided context.
     Use only the information from the context to answer the question.
     If you can't find relevant information in the context, say so."""
 
     # ChatOllama mit benutzerdefiniertem Host und Port initialisieren
     chat = ChatOllama(
-        host=ollama_host,
-        port=int(ollama_port),
+        base_url=base_url,
         model=model,
-        temperature=0.9
+        temperature=temperature,
     )
 
     # Convert messages to LangChain's format
@@ -55,12 +56,13 @@ def generate_answer(query, messages=None, model="llama3.2"):
 
     return response.content
 
+
 def generate_multimodal_answer(query, image_path, model="llama3.2", messages=None):
     if messages is None:
         messages = []
 
     # Define the system prompt
-    system_prompt = """You are a multi-modal assistant that answers questions based on the provided context. 
+    system_prompt = """You are a multi-modal assistant that answers questions based on the provided context.
     Use the information from the context and the provided image to answer the question.
     If you can't find relevant information in the context, say so."""
 
@@ -69,7 +71,7 @@ def generate_multimodal_answer(query, image_path, model="llama3.2", messages=Non
         host=ollama_host,
         port=int(ollama_port),  # Port muss eine Zahl sein
         model=model,  # Beispielmodell
-        temperature=0.9
+        temperature=0.9,
     )
 
     # Convert messages to LangChain's format
@@ -85,16 +87,15 @@ def generate_multimodal_answer(query, image_path, model="llama3.2", messages=Non
     with open(image_path, "rb") as img_file:
         image_bytes = base64.b64encode(img_file.read()).decode("utf-8")
 
-    prompt = HumanMessage(content=[
+    prompt = HumanMessage(
+        content=[
             {"type": "text", "text": query},
             {
                 "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{image_bytes}"
-                },
+                "image_url": {"url": f"data:image/jpeg;base64,{image_bytes}"},
             },
-        ])
-
+        ]
+    )
 
     formatted_messages.append(prompt)
 
