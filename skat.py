@@ -4,66 +4,71 @@ from openai import OpenAI
 
 client = OpenAI()
 
+
 class ValidSkatCards(str, Enum):
-    ace_clubs = "ace-clubs"
-    ace_diamonds = "ace-diamonds"
-    ace_hearts = "ace-hearts"
-    ace_spades = "ace-spades"
-    eight_clubs = "8-clubs"
-    eight_diamonds = "8-diamonds"
-    eight_hearts = "8-hearts"
-    eight_spades = "8-spades"
-    jack_clubs = "jack-clubs"
-    jack_diamonds = "jack-diamonds"
-    jack_hearts = "jack-hearts"
-    jack_spades = "jack-spades"
-    king_clubs = "king-clubs"
-    king_diamonds = "king-diamonds"
-    king_hearts = "king-hearts"
-    king_spades = "king-spades"
-    nine_clubs = "9-clubs"
-    nine_diamonds = "9-diamonds"
-    nine_spades = "9-spades"
-    queen_clubs = "queen-clubs"
-    queen_diamonds = "queen-diamonds"
-    queen_hearts = "queen-hearts"
-    queen_spades = "queen-spades"
-    seven_clubs = "7-clubs"
-    seven_diamonds = "7-diamonds"
-    seven_hearts = "7-hearts"
-    seven_spades = "7-spades"
-    ten_clubs = "10-clubs"
-    ten_diamonds = "10-diamonds"
-    ten_hearts = "10-hearts"
-    ten_spades = "10-spades"
+    ace_clubs = "A♣️"
+    ace_diamonds = "A♦️"
+    ace_hearts = "A♥️"
+    ace_spades = "A♠️"
+    eight_clubs = "8♣️"
+    eight_diamonds = "8♦️"
+    eight_hearts = "8♥️"
+    eight_spades = "8♠️"
+    jack_clubs = "J♣️"
+    jack_diamonds = "J♦️"
+    jack_hearts = "J♥️"
+    jack_spades = "J♠️"
+    king_clubs = "K♣️"
+    king_diamonds = "K♦️"
+    king_hearts = "K♥️"
+    king_spades = "K♠️"
+    nine_clubs = "9♣️"
+    nine_diamonds = "9♦️"
+    nine_spades = "9♠️"
+    queen_clubs = "Q♣️"
+    queen_diamonds = "Q♦️"
+    queen_hearts = "Q♥️"
+    queen_spades = "Q♠️"
+    seven_clubs = "7♣️"
+    seven_diamonds = "7♦️"
+    seven_hearts = "7♥️"
+    seven_spades = "7♠️"
+    ten_clubs = "10♣️"
+    ten_diamonds = "10♦️"
+    ten_hearts = "10♥️"
+    ten_spades = "10♠️"
+
 
 #
-# NOTE Tightening the available values makes no difference.
+# NOTE Tightening the available values makes no difference for the one-shot
+# correctness of the structured-output approach.
 #
 class SkatContent(BaseModel):
     skatcards: list[str]
-    #skatcards: list[ValidSkatCards]
+    # skatcards: list[ValidSkatCards]
 
 
 messages = []
-f = open("prompts/system.skat4-structured")
-system_prompt = "".join(f.readlines())
+with open("prompts/system.skat5") as f:
+    system_prompt = "".join(f.readlines())
+
 model = "gpt-4o"
 # model = 'gpt-3.5-turbo'
 # model = 'o1-preview'
-temp = 0.1
+temp = 0
 
 test_case = """
 These are the three hands and the skat:
 
-P1: [jack-hearts, jack-clubs, ace-diamonds, 10-diamonds, 9-diamonds, ace-hearts, 10-hearts, 8-hearts, 7-hearts, queen-spades]
-P2: [jack-spades, king-hearts, king-diamonds, queen-diamonds, queen-hearts, 8-diamonds, 7-diamonds, ace-clubs, 10-clubs, 9-clubs]
-P3: [jack-diamonds, king-clubs, queen-clubs, 8-clubs, 7-clubs, ace-spades, king-spades, 10-spades, 9-spades, 8-spades]
+P1: [J♥️, J♣️, A♦️, 10♦️, 9♦️, A♥️, 10♥️, 8♥️, 7♥️, Q♠️]
+P2: [J♠️, K♥️, K♦️, Q♦️, Q♥️, 8♦️, 7♦️, A♣️, 10♣️, 9♣️]
+P3: [J♦️, K♣️, Q♣️, 8♣️, 7♣️, A♠️, K♠️, 10♠️, 9♠️, 8♠️]
 
 Skat: [?, ?]
 
 You are the game master: which cards are in the Skat?  Determine the answer by
-arranging and sorting all known cards and comparing to the full 32-card set.
+first sorting and printing all players' cards and then and comparing them to
+the full 32-card set.  Do this comparison twice to avoid errors.
 
 """
 
@@ -74,7 +79,7 @@ completion = client.beta.chat.completions.parse(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": test_case},
     ],
-    response_format=SkatContent,
+    # response_format=SkatContent,
 )
 
 answer = completion.choices[0].message.content
@@ -84,7 +89,7 @@ structured = completion.choices[0].message.parsed
 if structured:
     print("Structured:")
     print(structured)
-print("Expected: 9-hearts, 7-spades")
+print("Expected: 9♥️, 7♠️")
 
 # while True:
 #    myinput = input("> ")
